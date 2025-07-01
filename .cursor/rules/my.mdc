@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+run this command if you want to make any thing in the terminal venv\Scripts\activate
+apply the changes without adding any thing else except this changes 
+and update the changelog with the changes 
