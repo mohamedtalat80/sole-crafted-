@@ -14,7 +14,7 @@ class ProductAPITestCase(TestCase):
             name="Test Shoe",
             brand="Test Brand",
             description="A test shoe.",
-            price=100.00,
+            price=1100.00,
             discount_percentage=10,
             main_image="http://example.com/image.jpg",
             sizes={"42": 5, "43": 3},
@@ -25,9 +25,11 @@ class ProductAPITestCase(TestCase):
         )
 
     def test_home_product_list(self):
-        url = reverse('home-product-list')
+        url = reverse('home-products')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        print (response.data)
+        print (self.product.price)
         self.assertTrue(any(p['name'] == self.product.name for p in response.data))
 
     def test_product_details(self):
