@@ -18,3 +18,4 @@ python-decouple==3.8
 sqlparse==0.5.3
 django-environ==0.11.2
 django-storage-supabase==0.1.0 
+setuptools
