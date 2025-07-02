@@ -28,7 +28,7 @@ SECRET_KEY = config('DJANGO_SECRET_KEY', default='unsafe-secret-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     # Local apps (to be created)
     'users',
     'Prouducts',
-    # 'orders',
+    'orders',
     # 'payments',
     # 'dashboard',
     # 'profiles',
@@ -97,7 +97,8 @@ if config('USE_POSTGRES', default=False, cast=bool):
             'USER': config('DB_USER'),
             'PASSWORD': config('DB_PASSWORD'),
             'HOST': config('DB_HOST'),
-            'PORT': config('DB_PORT', default='5432'),
+            'PORT': config('DB_PORT'),
+            'OPTIONS': {'sslmode': 'require'},
         }
     }
 else:
