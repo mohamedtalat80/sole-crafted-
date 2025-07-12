@@ -10,6 +10,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django_filters import rest_framework as filters
 from django.db import transaction
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from .models import DashboardAdmin, AuditLog, DashboardConfiguration
 from .serializers import (
@@ -38,6 +40,37 @@ class DashboardLoginView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = []
 
+    @swagger_auto_schema(
+        operation_description="Login to dashboard with admin credentials",
+        request_body=DashboardLoginSerializer,
+        responses={
+            200: openapi.Response(
+                description="Login successful",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'access_token': openapi.Schema(type=openapi.TYPE_STRING),
+                        'refresh_token': openapi.Schema(type=openapi.TYPE_STRING),
+                        'user': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Invalid credentials or 2FA required",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        'requires_2fa': openapi.Schema(type=openapi.TYPE_BOOLEAN)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Invalid credentials"),
+            403: openapi.Response(description="User is not a dashboard admin")
+        }
+    )
     def post(self, request):
         serializer = DashboardLoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -105,6 +138,22 @@ class DashboardLoginView(APIView):
 class DashboardLogoutView(APIView):
     permission_classes = [IsDashboardAdmin]
 
+    @swagger_auto_schema(
+        operation_description="Logout from dashboard",
+        responses={
+            200: openapi.Response(
+                description="Logout successful",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized")
+        }
+    )
     def post(self, request):
         log_audit_action(request.user, 'LOGOUT', 'DashboardAdmin', request.user.id, {}, request)
         return Response({
@@ -115,6 +164,22 @@ class DashboardLogoutView(APIView):
 class DashboardAuthVerifyView(APIView):
     permission_classes = [IsDashboardAdmin]
 
+    @swagger_auto_schema(
+        operation_description="Verify dashboard authentication",
+        responses={
+            200: openapi.Response(
+                description="Authentication verified",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'user': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            ),
+            403: openapi.Response(description="User is not a dashboard admin")
+        }
+    )
     def get(self, request):
         try:
             dashboard_admin = DashboardAdmin.objects.get(user=request.user)
@@ -133,6 +198,16 @@ class DashboardAuthVerifyView(APIView):
 class DashboardOverviewView(APIView):
     permission_classes = [IsDashboardAdmin]
 
+    @swagger_auto_schema(
+        operation_description="Get dashboard overview analytics",
+        responses={
+            200: openapi.Response(
+                description="Overview data retrieved",
+                schema=openapi.Schema(type=openapi.TYPE_OBJECT)
+            ),
+            401: openapi.Response(description="Unauthorized")
+        }
+    )
     def get(self, request):
         overview_data = get_dashboard_overview()
         return Response(format_response_data(overview_data, user=request.user))
@@ -142,6 +217,23 @@ class DashboardProductListView(APIView):
     permission_classes = [HasProductManagementPermission]
     pagination_class = PageNumberPagination
 
+    @swagger_auto_schema(
+        operation_description="Get paginated list of products with filtering and search",
+        manual_parameters=[
+            openapi.Parameter('status', openapi.IN_QUERY, description="Filter by status (available/unavailable)", type=openapi.TYPE_STRING),
+            openapi.Parameter('category', openapi.IN_QUERY, description="Filter by category ID", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('stock', openapi.IN_QUERY, description="Filter by stock (out_of_stock/low_stock)", type=openapi.TYPE_STRING),
+            openapi.Parameter('search', openapi.IN_QUERY, description="Search in name, brand, description", type=openapi.TYPE_STRING),
+            openapi.Parameter('sort_by', openapi.IN_QUERY, description="Sort field", type=openapi.TYPE_STRING),
+            openapi.Parameter('sort_order', openapi.IN_QUERY, description="Sort order (asc/desc)", type=openapi.TYPE_STRING),
+            openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
+        ],
+        responses={
+            200: DashboardProductSerializer(many=True),
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied")
+        }
+    )
     def get(self, request):
         products = Product.objects.select_related('category').all()
         
@@ -194,6 +286,26 @@ class DashboardProductListView(APIView):
         
         return Response(format_response_data(serializer.data, user=request.user))
 
+    @swagger_auto_schema(
+        operation_description="Create a new product",
+        request_body=DashboardProductCreateSerializer,
+        responses={
+            201: DashboardProductSerializer,
+            400: openapi.Response(
+                description="Validation error",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        'errors': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied")
+        }
+    )
     def post(self, request):
         serializer = DashboardProductCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -216,11 +328,41 @@ class DashboardProductListView(APIView):
 class DashboardProductDetailView(APIView):
     permission_classes = [HasProductManagementPermission]
 
+    @swagger_auto_schema(
+        operation_description="Get specific product details",
+        responses={
+            200: DashboardProductSerializer,
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied"),
+            404: openapi.Response(description="Product not found")
+        }
+    )
     def get(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
         serializer = DashboardProductSerializer(product)
         return Response(format_response_data(serializer.data, user=request.user))
 
+    @swagger_auto_schema(
+        operation_description="Update product information",
+        request_body=DashboardProductCreateSerializer,
+        responses={
+            200: DashboardProductSerializer,
+            400: openapi.Response(
+                description="Validation error",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        'errors': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied"),
+            404: openapi.Response(description="Product not found")
+        }
+    )
     def put(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
         serializer = DashboardProductCreateSerializer(product, data=request.data, partial=True)
@@ -241,6 +383,34 @@ class DashboardProductDetailView(APIView):
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description="Delete a product",
+        responses={
+            200: openapi.Response(
+                description="Product deleted successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Cannot delete product with active orders",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied"),
+            404: openapi.Response(description="Product not found")
+        }
+    )
     def delete(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
         
@@ -269,6 +439,24 @@ class DashboardOrderListView(APIView):
     permission_classes = [HasOrderManagementPermission]
     pagination_class = PageNumberPagination
 
+    @swagger_auto_schema(
+        operation_description="Get paginated list of orders with filtering and search",
+        manual_parameters=[
+            openapi.Parameter('status', openapi.IN_QUERY, description="Filter by order status", type=openapi.TYPE_STRING),
+            openapi.Parameter('payment_status', openapi.IN_QUERY, description="Filter by payment status", type=openapi.TYPE_STRING),
+            openapi.Parameter('date_from', openapi.IN_QUERY, description="Filter by start date", type=openapi.TYPE_STRING, format='date'),
+            openapi.Parameter('date_to', openapi.IN_QUERY, description="Filter by end date", type=openapi.TYPE_STRING, format='date'),
+            openapi.Parameter('customer', openapi.IN_QUERY, description="Search by customer email/name", type=openapi.TYPE_STRING),
+            openapi.Parameter('sort_by', openapi.IN_QUERY, description="Sort field", type=openapi.TYPE_STRING),
+            openapi.Parameter('sort_order', openapi.IN_QUERY, description="Sort order (asc/desc)", type=openapi.TYPE_STRING),
+            openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
+        ],
+        responses={
+            200: DashboardOrderSerializer(many=True),
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied")
+        }
+    )
     def get(self, request):
         orders = Order.objects.select_related('user').prefetch_related('items').all()
         
@@ -322,11 +510,37 @@ class DashboardOrderListView(APIView):
 class DashboardOrderDetailView(APIView):
     permission_classes = [HasOrderManagementPermission]
 
+    @swagger_auto_schema(
+        operation_description="Get specific order details",
+        responses={
+            200: DashboardOrderSerializer,
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied"),
+            404: openapi.Response(description="Order not found")
+        }
+    )
     def get(self, request, order_id):
         order = get_object_or_404(Order, id=order_id)
         serializer = DashboardOrderSerializer(order)
         return Response(format_response_data(serializer.data, user=request.user))
 
+    @swagger_auto_schema(
+        operation_description="Update order status and information",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'status': openapi.Schema(type=openapi.TYPE_STRING, description="Order status"),
+                'shipping_address': openapi.Schema(type=openapi.TYPE_STRING, description="Shipping address"),
+                'payment_status': openapi.Schema(type=openapi.TYPE_STRING, description="Payment status")
+            }
+        ),
+        responses={
+            200: DashboardOrderSerializer,
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied"),
+            404: openapi.Response(description="Order not found")
+        }
+    )
     def put(self, request, order_id):
         order = get_object_or_404(Order, id=order_id)
         old_status = order.status
@@ -350,6 +564,24 @@ class DashboardOrderDetailView(APIView):
         
         return Response(format_response_data(DashboardOrderSerializer(order).data, user=request.user))
 
+    @swagger_auto_schema(
+        operation_description="Cancel an order and restore inventory",
+        responses={
+            200: openapi.Response(
+                description="Order cancelled successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied"),
+            404: openapi.Response(description="Order not found")
+        }
+    )
     def delete(self, request, order_id):
         order = get_object_or_404(Order, id=order_id)
         
@@ -376,6 +608,22 @@ class DashboardPaymentListView(APIView):
     permission_classes = [HasPaymentViewPermission]
     pagination_class = PageNumberPagination
 
+    @swagger_auto_schema(
+        operation_description="Get paginated list of payment transactions",
+        manual_parameters=[
+            openapi.Parameter('status', openapi.IN_QUERY, description="Filter by payment status", type=openapi.TYPE_STRING),
+            openapi.Parameter('date_from', openapi.IN_QUERY, description="Filter by start date", type=openapi.TYPE_STRING, format='date'),
+            openapi.Parameter('date_to', openapi.IN_QUERY, description="Filter by end date", type=openapi.TYPE_STRING, format='date'),
+            openapi.Parameter('sort_by', openapi.IN_QUERY, description="Sort field", type=openapi.TYPE_STRING),
+            openapi.Parameter('sort_order', openapi.IN_QUERY, description="Sort order (asc/desc)", type=openapi.TYPE_STRING),
+            openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
+        ],
+        responses={
+            200: DashboardPaymentSerializer(many=True),
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied")
+        }
+    )
     def get(self, request):
         payments = Payment.objects.select_related('order__user').all()
         
@@ -413,6 +661,28 @@ class DashboardPaymentListView(APIView):
 class DashboardAnalyticsView(APIView):
     permission_classes = [HasAnalyticsPermission]
 
+    @swagger_auto_schema(
+        operation_description="Get comprehensive analytics data",
+        manual_parameters=[
+            openapi.Parameter('period', openapi.IN_QUERY, description="Analytics period (month/week/day)", type=openapi.TYPE_STRING, default='month'),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Analytics data retrieved",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'sales': openapi.Schema(type=openapi.TYPE_OBJECT),
+                        'orders': openapi.Schema(type=openapi.TYPE_OBJECT),
+                        'products': openapi.Schema(type=openapi.TYPE_OBJECT),
+                        'payments': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            403: openapi.Response(description="Permission denied")
+        }
+    )
     def get(self, request):
         period = request.query_params.get('period', 'month')
         

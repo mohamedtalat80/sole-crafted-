@@ -18,6 +18,8 @@ import uuid
 import logging
 from django.conf import settings
 from decouple import config
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +30,46 @@ class CartView(APIView):
         cart, created = Cart.objects.get_or_create(user=user)
         return cart
 
+    @swagger_auto_schema(
+        operation_description="Get user's cart",
+        responses={
+            200: CartSerializer,
+            401: openapi.Response(description="Unauthorized")
+        }
+    )
     def get(self, request):
         cart = self.get_cart(request.user)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description="Update cart with new items",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['items'],
+            properties={
+                'items': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        required=['product', 'size', 'color', 'quantity'],
+                        properties={
+                            'product': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'size': openapi.Schema(type=openapi.TYPE_STRING),
+                            'color': openapi.Schema(type=openapi.TYPE_STRING),
+                            'quantity': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'price': openapi.Schema(type=openapi.TYPE_NUMBER)
+                        }
+                    )
+                )
+            }
+        ),
+        responses={
+            200: CartSerializer,
+            401: openapi.Response(description="Unauthorized"),
+            404: openapi.Response(description="Product not found")
+        }
+    )
     def put(self, request):
         cart = self.get_cart(request.user)
         # Remove existing items
@@ -52,6 +89,13 @@ class CartView(APIView):
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description="Clear all items from cart",
+        responses={
+            200: CartSerializer,
+            401: openapi.Response(description="Unauthorized")
+        }
+    )
     def delete(self, request):
         cart = self.get_cart(request.user)
         cart.items.all().delete()
@@ -62,11 +106,40 @@ class CartView(APIView):
 class OrderListCreateAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Get user's order history",
+        responses={
+            200: OrderSerializer(many=True),
+            401: openapi.Response(description="Unauthorized")
+        }
+    )
     def get(self, request):
         orders = Order.objects.filter(user=request.user).order_by('-created_at')
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description="Create a new order from cart",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'payment_status': openapi.Schema(type=openapi.TYPE_STRING, default='pending')
+            }
+        ),
+        responses={
+            201: OrderSerializer,
+            400: openapi.Response(
+                description="Cart is empty or product unavailable",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'detail': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized")
+        }
+    )
     @transaction.atomic
     def post(self, request):
         cart = get_object_or_404(Cart, user=request.user)
@@ -104,6 +177,14 @@ class OrderListCreateAPIView(APIView):
 class OrderDetailAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Get specific order details",
+        responses={
+            200: OrderSerializer,
+            401: openapi.Response(description="Unauthorized"),
+            404: openapi.Response(description="Order not found")
+        }
+    )
     def get(self, request, order_id):
         order = get_object_or_404(Order, pk=order_id, user=request.user)
         serializer = OrderSerializer(order)
@@ -117,6 +198,32 @@ class PaymentCheckoutView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Initiates a Paymob payment for an order and returns the payment iframe URL",
+        responses={
+            200: openapi.Response(
+                description="Payment initiated successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'iframe_url': openapi.Schema(type=openapi.TYPE_STRING),
+                        'payment_id': openapi.Schema(type=openapi.TYPE_INTEGER)
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Payment initiation failed",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'detail': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            404: openapi.Response(description="Order not found")
+        }
+    )
     def post(self, request, order_id):
         order = get_object_or_404(Order, id=order_id, user=request.user)
         user_info=UserProfile.objects.get(user=request.user)
@@ -189,6 +296,44 @@ class PaymentWebhookView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @swagger_auto_schema(
+        operation_description="Handles Paymob payment response webhooks",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'order': openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'id': openapi.Schema(type=openapi.TYPE_INTEGER)
+                    }
+                ),
+                'success': openapi.Schema(type=openapi.TYPE_STRING),
+                'error_occured': openapi.Schema(type=openapi.TYPE_STRING),
+                'message': openapi.Schema(type=openapi.TYPE_STRING),
+                'txn_response_code': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+        responses={
+            200: openapi.Response(
+                description="Webhook processed successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Invalid webhook data",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'detail': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            )
+        }
+    )
     def post(self, request):
         try:
             data = request.data if hasattr(request, 'data') else request.POST
@@ -225,6 +370,21 @@ class PaymentWebhookView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class OrderStatusView(APIView):
+    @swagger_auto_schema(
+        operation_description="Get order payment status",
+        responses={
+            200: openapi.Response(
+                description="Order status retrieved",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            404: openapi.Response(description="Order not found")
+        }
+    )
     def get(self, request, order_id):
         order = Order.objects.get(id=order_id)
         return Response({'status': order.payment_status})

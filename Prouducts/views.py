@@ -9,11 +9,14 @@ from rest_framework.response import Response
 from rest_framework import status   
 from rest_framework.views import APIView
 from rest_framework import permissions
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 class HomeProductListView(ListAPIView):
     queryset = Product.objects.filter(is_available=True)
     serializer_class = HomeProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+
 class ProductDetailsView(RetrieveAPIView):  
     queryset = Product.objects.all()
     serializer_class = ProductDetailsSerializer
@@ -25,6 +28,47 @@ class ProductDetailsView(RetrieveAPIView):
 class AddToFavoritesView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Add a product to user's favorites",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['product_id'],
+            properties={
+                'product_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Product ID to add to favorites')
+            }
+        ),
+        responses={
+            201: openapi.Response(
+                description="Product added to favorites",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            200: openapi.Response(
+                description="Product already in favorites",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Invalid request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            404: openapi.Response(description="Product not found")
+        }
+    )
     def post(self, request):
         product_id = request.data.get('product_id')
         if not product_id:
@@ -44,6 +88,22 @@ class AddToFavoritesView(APIView):
 class RemoveFromFavoritesView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Remove a product from user's favorites",
+        responses={
+            200: openapi.Response(
+                description="Product removed from favorites",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            404: openapi.Response(description="Product not found or not in favorites")
+        }
+    )
     def delete(self, request, pk):
         product = get_object_or_404(Product, pk=pk)
         user = request.user
@@ -59,6 +119,22 @@ class RemoveFromFavoritesView(APIView):
 class CheckFavoriteStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Check if a product is in user's favorites",
+        responses={
+            200: openapi.Response(
+                description="Favorite status retrieved",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'is_in_favorites': openapi.Schema(type=openapi.TYPE_BOOLEAN)
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            404: openapi.Response(description="Product not found")
+        }
+    )
     def get(self, request, pk=None):
         product = get_object_or_404(Product, pk=pk)
         is_favorite = Favorite.objects.filter(user=request.user, product=product).exists()
@@ -68,6 +144,13 @@ class CheckFavoriteStatusView(APIView):
 class ListFavoritesView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Get all user's favorite products",
+        responses={
+            200: FavoriteSerializer(many=True),
+            401: openapi.Response(description="Unauthorized")
+        }
+    )
     def get(self, request):
         favorites = Favorite.objects.filter(user=request.user)
         serializer = FavoriteSerializer(favorites, many=True)
@@ -76,6 +159,22 @@ class ListFavoritesView(APIView):
 class ProductRatingView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Get product rating",
+        responses={
+            200: openapi.Response(
+                description="Product rating retrieved",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'rating': openapi.Schema(type=openapi.TYPE_NUMBER, description='Average rating (0-5)')
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            404: openapi.Response(description="Product not found")
+        }
+    )
     def get(self, request, pk):
         """Get product rating"""
         try:
@@ -94,6 +193,33 @@ class ProductRatingView(APIView):
 class ProductCommentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Get product comments",
+        responses={
+            200: openapi.Response(
+                description="Product comments retrieved",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'comments': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'user': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'comment': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'rating': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'created_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time')
+                                }
+                            )
+                        )
+                    }
+                )
+            ),
+            401: openapi.Response(description="Unauthorized"),
+            404: openapi.Response(description="Product not found")
+        }
+    )
     def get(self, request, pk):
         """Get product comments"""
         try:

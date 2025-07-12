@@ -38,7 +38,7 @@ urlpatterns = [
     path('products/',include('Prouducts.urls')),
     path('orders/', include('orders.urls')),
     path('profile/',include('user_profile.urls')),
-    path('api/dashboard/', include('dashboard.urls')),
+    path('dashboard/', include('dashboard.urls')),
     # Swagger URLs
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

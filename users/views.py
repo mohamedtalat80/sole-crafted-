@@ -13,6 +13,8 @@ from .serializers import (
 from .services import EmailService
 import random
 import logging
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -23,6 +25,32 @@ User = get_user_model()
 
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
+    
+    @swagger_auto_schema(
+        operation_description="Register a new user account",
+        request_body=RegisterSerializer,
+        responses={
+            201: openapi.Response(
+                description="User registered successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        'warning': openapi.Schema(type=openapi.TYPE_STRING),
+                        'debug_info': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Validation error",
+                schema=openapi.Schema(type=openapi.TYPE_OBJECT)
+            ),
+            500: openapi.Response(
+                description="Server error",
+                schema=openapi.Schema(type=openapi.TYPE_OBJECT)
+            )
+        }
+    )
     def post(self, request):
         logger.info("=== Starting user registration process ===")
         
@@ -88,6 +116,33 @@ class RegisterView(APIView):
 
 class VerifyingEmailForUnVerified(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    
+    @swagger_auto_schema(
+        operation_description="Resend verification email for unverified users",
+        request_body=VerifyingEmailForUnVerifiedSerializer,
+        responses={
+            200: openapi.Response(
+                description="Verification email sent successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            500: openapi.Response(
+                description="Email service error",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        'warning': openapi.Schema(type=openapi.TYPE_STRING),
+                        'debug_info': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            )
+        }
+    )
     def post (self,request):
         email=request.data.get('email')
         serializer = VerifyingEmailForUnVerifiedSerializer(data=request.data)
@@ -113,6 +168,31 @@ class VerifyingEmailForUnVerified(APIView):
             
 class EmailVerifyView(APIView):
     permission_classes = [permissions.AllowAny]
+    
+    @swagger_auto_schema(
+        operation_description="Verify email with verification code",
+        request_body=EmailVerificationSerializer,
+        responses={
+            200: openapi.Response(
+                description="Email verified successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Invalid or expired verification code",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            )
+        }
+    )
     def post(self, request):
         code = request.data.get('code')
         try:
@@ -134,6 +214,21 @@ class RefreshTokenView(TokenRefreshView):
 
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    
+    @swagger_auto_schema(
+        operation_description="Logout user and blacklist refresh token",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['refresh'],
+            properties={
+                'refresh': openapi.Schema(type=openapi.TYPE_STRING, description='Refresh token to blacklist')
+            }
+        ),
+        responses={
+            205: openapi.Response(description="Successfully logged out"),
+            400: openapi.Response(description="Invalid token")
+        }
+    )
     def post(self, request):
         try:
             refresh_token = request.data["refresh"]
@@ -145,6 +240,46 @@ class LogoutView(APIView):
 
 class ForgotPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
+    
+    @swagger_auto_schema(
+        operation_description="Send password reset OTP to user email",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['email'],
+            properties={
+                'email': openapi.Schema(type=openapi.TYPE_STRING, format='email')
+            }
+        ),
+        responses={
+            200: openapi.Response(
+                description="OTP sent successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            404: openapi.Response(
+                description="User not found",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            500: openapi.Response(
+                description="Failed to send OTP",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            )
+        }
+    )
     def post(self, request):
         email = request.data.get('email')
         try:
@@ -163,6 +298,42 @@ class ForgotPasswordView(APIView):
 
 class VerifyOTPView(APIView):
     permission_classes = [permissions.AllowAny]
+    
+    @swagger_auto_schema(
+        operation_description="Verify OTP and return JWT tokens",
+        request_body=PasswordResetOTPSerializer,
+        responses={
+            200: openapi.Response(
+                description="OTP verified successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        'refresh': openapi.Schema(type=openapi.TYPE_STRING),
+                        'access': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Invalid or expired OTP",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            404: openapi.Response(
+                description="User not found",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            )
+        }
+    )
     def post(self, request):
         email = request.data.get('email')
         otp = request.data.get('otp')
@@ -186,6 +357,35 @@ class VerifyOTPView(APIView):
 
 class ResetPasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    
+    @swagger_auto_schema(
+        operation_description="Reset password using OTP",
+        request_body=PasswordResetSerializer,
+        responses={
+            200: openapi.Response(
+                description="Password reset successful",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Invalid OTP or validation error",
+                schema=openapi.Schema(type=openapi.TYPE_OBJECT)
+            ),
+            500: openapi.Response(
+                description="Server error",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            )
+        }
+    )
     def post(self, request):
         # Use the authenticated user from the token
         user = request.user
