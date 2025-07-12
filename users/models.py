@@ -4,6 +4,8 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 import string
+from Prouducts.models import Product,Favorite
+from orders.models import Order
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
@@ -22,6 +24,9 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+    
 
 class EmailVerification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

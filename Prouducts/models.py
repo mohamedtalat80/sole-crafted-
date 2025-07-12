@@ -1,5 +1,5 @@
 from django.db import models
-from users.models import User
+from django.conf import settings
 class Category(models.Model):
     name = models.CharField(max_length=100)
     def __str__(self):
@@ -35,8 +35,23 @@ class ProductImage(models.Model):
         return f"Image for {self.product.name}"
 class Rating(models.Model):
     product=models.ForeignKey(Product,on_delete=models.CASCADE,related_name='rating')
-    user=models.ForeignKey(User,on_delete=models.CASCADE)
-    
+    user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    rating=models.IntegerField(default=0)
+    comment=models.TextField(null=True,blank=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.user.username}'s rating: {self.product.name}"
+class Favorite(models.Model):
+    user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    product=models.ForeignKey(Product,on_delete=models.CASCADE)
+    created_at=models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = ('user', 'product')
+        verbose_name = 'Favorite'
+        verbose_name_plural = 'Favorites'
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name}"
 
 
 

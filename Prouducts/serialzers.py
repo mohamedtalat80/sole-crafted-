@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product
+from .models import Product,Favorite    
 class HomeProductSerializer(serializers.ModelSerializer):
     class Meta:
         model=Product
@@ -32,3 +32,9 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             'category',
             'stock_quantity'
         ]
+class FavoriteSerializer(serializers.ModelSerializer):
+    product=ProductDetailsSerializer(read_only=True)
+    class Meta:
+        model=Favorite
+        fields=['id','product','created_at']
+        read_only_fields=['user','created_at']

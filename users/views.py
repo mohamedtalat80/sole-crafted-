@@ -85,6 +85,7 @@ class RegisterView(APIView):
             logger.error(f"Serializer validation failed: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class VerifyingEmailForUnVerified(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def post (self,request):
@@ -126,7 +127,6 @@ class EmailVerifyView(APIView):
             return Response({'error': 'Invalid or expired verification code.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(TokenObtainPairView):
-    serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
 
 class RefreshTokenView(TokenRefreshView):
@@ -162,20 +162,27 @@ class ForgotPasswordView(APIView):
             return Response({'error': 'User with this email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
 
 class VerifyOTPView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     def post(self, request):
-        # Use the authenticated user from the token
-        user = request.user
+        email = request.data.get('email')
         otp = request.data.get('otp')
-        
         try:
+            user = User.objects.get(email=email)
             otp_obj = PasswordResetOTP.objects.filter(user=user, otp=otp, is_used=False).last()
             if otp_obj and otp_obj.is_valid():
-                return Response({'message': 'OTP verified.'}, status=status.HTTP_200_OK)
+                # Mark OTP as used if you want
+                # otp_obj.is_used = True
+                # otp_obj.save()
+                # Issue JWT token
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    'message': 'OTP verified.',
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token)
+                }, status=status.HTTP_200_OK)
             return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            logger.error(f"Error verifying OTP: {e}")
-            return Response({'error': 'Error verifying OTP.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 class ResetPasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]

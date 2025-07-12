@@ -1,6 +1,12 @@
 from rest_framework import serializers
-from .models import Cart, CartItem, Order, OrderItem
-from Products.models import Product
+from .models import Cart, CartItem, Order, OrderItem, Payment
+from Prouducts.models import Product
+from user_profile.models import UserProfile
+class UserInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['id', 'user', 'address', 'state', 'city', 'country']
+        read_only_fields = ['user']
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
@@ -32,7 +38,12 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             'id', 'user', 'order_number', 'status', 'total_amount',
-            'shipping_address', 'billing_address', 'payment_status',
+            'shipping_address', 'payment_status',
             'created_at', 'updated_at', 'items'
         ]
         read_only_fields = ['user', 'order_number', 'total_amount', 'created_at', 'updated_at', 'items']
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = '__all__'

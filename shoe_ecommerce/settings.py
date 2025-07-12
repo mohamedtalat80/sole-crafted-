@@ -46,13 +46,14 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',  # For token blacklisting
     'drf_yasg',
     'corsheaders',
+    
     # Local apps (to be created)
     'users',
     'Prouducts',
     'orders',
     # 'payments',
-    # 'dashboard',
-    # 'profiles',
+    'dashboard',
+    'user_profile',
 ]
 
 MIDDLEWARE = [
@@ -98,7 +99,7 @@ if config('USE_POSTGRES', default=False, cast=bool):
             'PASSWORD': config('DB_PASSWORD'),
             'HOST': config('DB_HOST'),
             'PORT': config('DB_PORT'),
-            'OPTIONS': {'sslmode': 'require'},
+            'OPTIONS': {'sslmode': 'disable'},
         }
     }
 else:
@@ -145,7 +146,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
@@ -214,7 +215,10 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'abnmoh525@gmail.com'
 
 # Paymob
-PAYMOB_API_KEY = config('PAYMOB_API_KEY', default='')
+PAYMOB_API_KEY = config('PAYMOB_API_KEY', default='your_paymob_api_key')
+PAYMOB_INTEGRATION_ID = config('PAYMOB_INTEGRATION_ID', default='your_integration_id')
+PAYMOB_IFRAME_ID = config('PAYMOB_IFRAME_ID', default='your_iframe_id')
+PAYMOB_BASE_URL = config('PAYMOB_BASE_URL', default='https://accept.paymobsolutions.com/api')
 
 # Swagger/DRF-YASG
 SWAGGER_SETTINGS = {

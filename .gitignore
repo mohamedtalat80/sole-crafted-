@@ -39,3 +39,6 @@ htmlcov/
 # Other
 *.bak
 *.swp 
+
+# YoYo AI version control directory
+.yoyo/

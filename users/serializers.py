@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User, EmailVerification, PasswordResetOTP
+from .models import User, EmailVerification, PasswordResetOTP 
 
 User = get_user_model()
 
@@ -50,16 +50,8 @@ class PasswordResetSerializer(serializers.Serializer):
             raise serializers.ValidationError("Passwords don't match.")
         return data
 
-class UserSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        # First authenticate the user
-        data = super().validate(attrs)
-        
-        # Only include essential verification status
-        data['verification_required'] = not self.user.is_verified
-        
-        # Optional: Include a simple message
-        if not self.user.is_verified:
-            data['message'] = "Please verify your email to access all features."
-        
-        return data 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'phone_number', 'is_verified', 'is_active')
+        read_only_fields = ('id', 'is_verified', 'is_active') 
