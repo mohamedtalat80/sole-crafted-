@@ -248,6 +248,9 @@ APPEND_SLASH=False
 AUTH_USER_MODEL = 'users.User'
 
 # Logging Configuration
+# ... existing code ...
+
+# Logging Configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -262,30 +265,27 @@ LOGGING = {
         },
     },
     'handlers': {
-        'console': {
+        'console': {  # Use console handler instead of file
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': 'debug.log',
             'formatter': 'verbose',
         },
     },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console'],  # Use console handler
         'level': 'INFO',
     },
     'loggers': {
         'users': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],  # Use console handler
             'level': 'DEBUG',
             'propagate': False,
         },
         'django.core.mail': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],  # Use console handler
             'level': 'DEBUG',
             'propagate': False,
         },
     },
 }
+
+# ... existing code ...
