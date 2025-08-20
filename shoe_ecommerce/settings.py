@@ -89,16 +89,28 @@ WSGI_APPLICATION = 'shoe_ecommerce.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-if config('USE_POSTGRES', default=False, cast=bool):
-    DATABASES = {
+if config('PRODUCTION')=='True':
+    if config('PRODUCTION_HOST')=='vercel':
+        DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME'),
-            'USER': config('DB_USER'),
-            'PASSWORD': config('DB_PASSWORD'),
-            'HOST': config('DB_HOST'),
-            'PORT': config('DB_PORT'),
+            'NAME': config('SUPABASE_DB_NAME'),
+            'USER': config('SUPABASE_DB_USER'),
+            'PASSWORD': config('SUPABASE_DB_PASSWORD'),
+            'HOST': config('SUPABASE_DB_HOST'),
+            'PORT': config('SUPABASE_DB_PORT'),
+            'OPTIONS': {'sslmode': 'disable'},
+        }
+    }
+    elif config('PRODUCTION_HOST')=='railway':
+        DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('RAILWAY_DB_NAME'),
+            'USER': config('RAILWAY_DB_USER'),
+            'PASSWORD': config('RAILWAY_DB_PASSWORD'),
+            'HOST': config('RAILWAY_DB_HOST'),
+            'PORT': config('RAILWAY_DB_PORT'),
             'OPTIONS': {'sslmode': 'disable'},
         }
     }
