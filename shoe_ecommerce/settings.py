@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',  # For token blacklisting
     'drf_yasg',
     'corsheaders',
-    
     # Local apps (to be created)
     'users',
     'Prouducts',
