@@ -12,7 +12,7 @@ django-redis
 boto3==1.29.7
 django-storages==1.14.2
 pillow==11.2.1
-django-filter==23.3
+django-filter==24.3
 drf-spectacular==0.26.5
 python-decouple==3.8
 sqlparse==0.5.3
