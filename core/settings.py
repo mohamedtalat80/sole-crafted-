@@ -232,6 +232,9 @@ PAYMOB_IFRAME_ID = config('PAYMOB_IFRAME_ID', default='your_iframe_id')
 PAYMOB_BASE_URL = config('PAYMOB_BASE_URL', default='https://accept.paymobsolutions.com/api')
 
 # Swagger/DRF-YASG
+# Note: drf-yasg has no built-in CDN setting; the Swagger UI / ReDoc vendor
+# assets are pointed at a CDN via the template overrides in
+# templates/drf-yasg/ instead (drf-yasg's own init JS still loads from static).
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
     'SECURITY_DEFINITIONS': {
@@ -241,20 +244,10 @@ SWAGGER_SETTINGS = {
             'in': 'header',
         }
     },
-    # Serve Swagger UI static assets from a CDN instead of collected static files
+    # Disable the external (online) schema validator badge.
     'VALIDATOR_URL': None,
-    'DEFAULT_SWAGGER_UI_VERSION': '4.18.3',
-    'SWAGGER_UI_DIST': '//unpkg.com/swagger-ui-dist@4.18.3',
-    'SWAGGER_UI_OAUTH2_DIST': '//unpkg.com/swagger-ui-dist@4.18.3',
 }
-
-# ReDoc/DRF-YASG
-REDOC_SETTINGS = {
-    # Serve ReDoc static assets from a CDN instead of collected static files
-    'DEFAULT_REDOC_VERSION': '2.0.0',
-    'REDOC_DIST': '//cdn.redoc.ly/redoc/v2.0.0/bundles',
-}
-APPEND_SLASH=False 
+APPEND_SLASH=False
 # Custom user model (to be implemented)
 AUTH_USER_MODEL = 'users.User'
 
