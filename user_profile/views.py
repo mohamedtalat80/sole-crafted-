@@ -2,11 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import UserProfile
-from .serializers import UserProfileSerializer
 from django.db import transaction
 from rest_framework import permissions
 from django.shortcuts import get_object_or_404
-from .serializers import UserProfileSerializer,UserProfileCreateSerializer
+from .serializers import UserProfileSerializer, UserAdressInfoSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -74,21 +73,21 @@ class UserInfoView(APIView):
     @swagger_auto_schema(
         operation_description="Get user information",
         responses={
-            200: UserProfileCreateSerializer,
+            200: UserAdressInfoSerializer,
             401: openapi.Response(description="Unauthorized"),
             404: openapi.Response(description="User info not found")
         }
     )
     def get(self, request):
         user_info=get_object_or_404(UserProfile,user=request.user)
-        serializer = UserProfileCreateSerializer(user_info)
+        serializer = UserAdressInfoSerializer(user_info)
         return Response(serializer.data)
     
     @swagger_auto_schema(
         operation_description="Create or update user information",
-        request_body=UserProfileCreateSerializer,
+        request_body=UserAdressInfoSerializer,
         responses={
-            200: UserProfileCreateSerializer,
+            200: UserAdressInfoSerializer,
             400: openapi.Response(
                 description="Validation error",
                 schema=openapi.Schema(type=openapi.TYPE_OBJECT)
@@ -99,7 +98,7 @@ class UserInfoView(APIView):
     )
     def post(self, request):
         user_info=get_object_or_404(UserProfile,user=request.user)
-        serializer = UserProfileCreateSerializer(user_info, data=request.data)
+        serializer = UserAdressInfoSerializer(user_info, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -107,9 +106,9 @@ class UserInfoView(APIView):
     
     @swagger_auto_schema(
         operation_description="Update user information",
-        request_body=UserProfileCreateSerializer,
+        request_body=UserAdressInfoSerializer,
         responses={
-            200: UserProfileCreateSerializer,
+            200: UserAdressInfoSerializer,
             400: openapi.Response(
                 description="Validation error",
                 schema=openapi.Schema(type=openapi.TYPE_OBJECT)
@@ -120,7 +119,7 @@ class UserInfoView(APIView):
     )
     def put(self, request):
         user_info=get_object_or_404(UserProfile,user=request.user)
-        serializer = UserProfileCreateSerializer(user_info, data=request.data)
+        serializer = UserAdressInfoSerializer(user_info, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
