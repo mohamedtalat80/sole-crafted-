@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import UserProfile
-from orders.models import Country, State, City
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -35,25 +34,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
         
         return super().update(instance, validated_data)
 
-class UserProfileCreateSerializer(serializers.ModelSerializer):
-    country = serializers.PrimaryKeyRelatedField(queryset=Country.objects.all())
-    state = serializers.PrimaryKeyRelatedField(queryset=State.objects.none())
-    city = serializers.PrimaryKeyRelatedField(queryset=City.objects.none())
-
+class UserAdressInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['address', 'country', 'state', 'city']
+        fields = ['country', 'state', 'city','address']
         extra_kwargs = {
             'user': {'read_only': True},
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'data' in kwargs:
-            country_id = kwargs['data'].get('country')
-            state_id = kwargs['data'].get('state')
-            if country_id:
-                self.fields['state'].queryset = State.objects.filter(country_id=country_id)
-            if state_id:
-                self.fields['city'].queryset = City.objects.filter(state_id=state_id)
     

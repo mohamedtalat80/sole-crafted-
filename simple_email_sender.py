@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'shoe_ecommerce.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
 from django.core.mail import send_mail

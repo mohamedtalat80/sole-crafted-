@@ -1,3 +1,4 @@
+from django.core.serializers import serialize
 from django.shortcuts import render
 from rest_framework import generics, status, viewsets, permissions
 from rest_framework.response import Response
@@ -22,28 +23,32 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 logger = logging.getLogger(__name__)
-
 class CartView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes= [permissions.IsAuthenticated]
 
-    def get_cart(self, user):
-        cart, created = Cart.objects.get_or_create(user=user)
-        return cart
-
+    def get_cart(self,user):
+        cart,created=Cart.objects.get_or_create(user=user)
+        return cart 
     @swagger_auto_schema(
         operation_description="Get user's cart",
         responses={
-            200: CartSerializer,
+            200 : CartSerializer,
+            201: CartSerializer ,
             401: openapi.Response(description="Unauthorized")
         }
-    )
-    def get(self, request):
-        cart = self.get_cart(request.user)
-        serializer = CartSerializer(cart)
-        return Response(serializer.data)
 
+    )
+    def get(self,request):
+        cart=self.get_card(request.user)
+        serializer=CartSerializer(cart)
+        return Response(serializer.data)
     @swagger_auto_schema(
-        operation_description="Update cart with new items",
+        operation_description="Update cart details with new items",
+        responses={
+            200 : CartSerializer,
+            400: openapi.Response(description="Invalid data"),
+            401: openapi.Response(description="Unauthorized")
+        },
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['items'],
@@ -63,132 +68,205 @@ class CartView(APIView):
                     )
                 )
             }
-        ),
-        responses={
-            200: CartSerializer,
-            401: openapi.Response(description="Unauthorized"),
-            404: openapi.Response(description="Product not found")
-        }
+        )        
     )
-    def put(self, request):
-        cart = self.get_cart(request.user)
-        # Remove existing items
+    def put(self,request):
+        cart=self.get_cart(request.user)
         cart.items.all().delete()
-        items_data = request.data.get('items', [])
-        for item in items_data:
-            product = get_object_or_404(Product, pk=item['product'])
+        items=request.data.get('items',[])
+        for item in items:
+            product=get_object_or_404(Product,pk=item['product'])
             CartItem.objects.create(
                 cart=cart,
                 product=product,
-                size=item['size'],
-                color=item['color'],
                 quantity=item['quantity'],
-                price=item.get('price', product.price)
+                color=item['color'],
+                size=item['size'],
+                price=item['price']
             )
         cart.refresh_from_db()
-        serializer = CartSerializer(cart)
+        serializer=CartSerializer(cart)
         return Response(serializer.data)
-
     @swagger_auto_schema(
         operation_description="Clear all items from cart",
         responses={
-            200: CartSerializer,
+            200 : CartSerializer,
             401: openapi.Response(description="Unauthorized")
         }
     )
-    def delete(self, request):
-        cart = self.get_cart(request.user)
+    def delete(self,request):
+        cart=self.get_cart(request.user)
         cart.items.all().delete()
         cart.refresh_from_db()
-        serializer = CartSerializer(cart)
+        serializer=CartSerializer(cart)
         return Response(serializer.data)
 
-class OrderListCreateAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+# class CartView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
 
-    @swagger_auto_schema(
-        operation_description="Get user's order history",
-        responses={
-            200: OrderSerializer(many=True),
-            401: openapi.Response(description="Unauthorized")
-        }
-    )
-    def get(self, request):
-        orders = Order.objects.filter(user=request.user).order_by('-created_at')
-        serializer = OrderSerializer(orders, many=True)
-        return Response(serializer.data)
+#     def get_cart(self, user):
+#         cart, created = Cart.objects.get_or_create(user=user)
+#         return cart
 
-    @swagger_auto_schema(
-        operation_description="Create a new order from cart",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'payment_status': openapi.Schema(type=openapi.TYPE_STRING, default='pending')
-            }
-        ),
-        responses={
-            201: OrderSerializer,
-            400: openapi.Response(
-                description="Cart is empty or product unavailable",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'detail': openapi.Schema(type=openapi.TYPE_STRING)
-                    }
-                )
-            ),
-            401: openapi.Response(description="Unauthorized")
-        }
-    )
-    @transaction.atomic
-    def post(self, request):
-        cart = get_object_or_404(Cart, user=request.user)
-        cart_items = cart.items.all()
-        user_info = get_object_or_404(UserProfile, user=request.user)
-        if not cart_items:
-            return Response({'detail': 'Cart is empty.'}, status=status.HTTP_400_BAD_REQUEST)
-        total = 0
-        for item in cart_items:
-            product = item.product
-            if not product.is_available:
-                return Response({'detail': f'Product {product.name} is not available.'}, status=status.HTTP_400_BAD_REQUEST)
-            total += item.price * item.quantity
-        order = Order.objects.create(
-            user=request.user,
-            order_number=get_random_string(12),
-            status='pending',
-            total_amount=total,
-            shipping_address=user_info.address,
-            payment_status=request.data.get('payment_status', 'pending'),
-        )
-        for item in cart_items:
-            OrderItem.objects.create(
-                order=order,
-                product=item.product,
-                size=item.size,
-                color=item.color,
-                quantity=item.quantity,
-                price_at_purchase=item.price
-            )
-        cart.items.all().delete()
-        serializer = OrderSerializer(order)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+#     @swagger_auto_schema(
+#         operation_description="Get user's cart",
+#         responses={
+#             200: CartSerializer,
+#             401: openapi.Response(description="Unauthorized")
+#         }
+#     )
+#     def get(self, request):
+#         cart = self.get_cart(request.user)
+#         serializer = CartSerializer(cart)
+#         return Response(serializer.data)
 
-class OrderDetailAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+#     @swagger_auto_schema(
+#         operation_description="Update cart with new items",
+#         request_body=openapi.Schema(
+#             type=openapi.TYPE_OBJECT,
+#             required=['items'],
+#             properties={
+#                 'items': openapi.Schema(
+#                     type=openapi.TYPE_ARRAY,
+#                     items=openapi.Schema(
+#                         type=openapi.TYPE_OBJECT,
+#                         required=['product', 'size', 'color', 'quantity'],
+#                         properties={
+#                             'product': openapi.Schema(type=openapi.TYPE_INTEGER),
+#                             'size': openapi.Schema(type=openapi.TYPE_STRING),
+#                             'color': openapi.Schema(type=openapi.TYPE_STRING),
+#                             'quantity': openapi.Schema(type=openapi.TYPE_INTEGER),
+#                             'price': openapi.Schema(type=openapi.TYPE_NUMBER)
+#                         }
+#                     )
+#                 )
+#             }
+#         ),
+#         responses={
+#             200: CartSerializer,
+#             401: openapi.Response(description="Unauthorized"),
+#             404: openapi.Response(description="Product not found")
+#         }
+#     )
+#     def put(self, request):
+#         cart = self.get_cart(request.user)
+#         # Remove existing items
+#         cart.items.all().delete()
+#         items_data = request.data.get('items', [])
+#         for item in items_data:
+#             product = get_object_or_404(Product, pk=item['product'])
+#             CartItem.objects.create(
+#                 cart=cart,
+#                 product=product,
+#                 size=item['size'],
+#                 color=item['color'],
+#                 quantity=item['quantity'],
+#                 price=item.get('price', product.price)
+#             )
+#         cart.refresh_from_db()
+#         serializer = CartSerializer(cart)
+#         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        operation_description="Get specific order details",
-        responses={
-            200: OrderSerializer,
-            401: openapi.Response(description="Unauthorized"),
-            404: openapi.Response(description="Order not found")
-        }
-    )
-    def get(self, request, order_id):
-        order = get_object_or_404(Order, pk=order_id, user=request.user)
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
+#     @swagger_auto_schema(
+#         operation_description="Clear all items from cart",
+#         responses={
+#             200: CartSerializer,
+#             401: openapi.Response(description="Unauthorized")
+#         }
+#     )
+#     def delete(self, request):
+#         cart = self.get_cart(request.user)
+#         cart.items.all().delete()
+#         cart.refresh_from_db()
+#         serializer = CartSerializer(cart)
+#         return Response(serializer.data)
+
+# class OrderListCreateAPIView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     @swagger_auto_schema(
+#         operation_description="Get user's order history",
+#         responses={
+#             200: OrderSerializer(many=True),
+#             401: openapi.Response(description="Unauthorized")
+#         }
+#     )
+#     def get(self, request):
+#         orders = Order.objects.filter(user=request.user).order_by('-created_at')
+#         serializer = OrderSerializer(orders, many=True)
+#         return Response(serializer.data)
+
+#     @swagger_auto_schema(
+#         operation_description="Create a new order from cart",
+#         request_body=openapi.Schema(
+#             type=openapi.TYPE_OBJECT,
+#             properties={
+#                 'payment_status': openapi.Schema(type=openapi.TYPE_STRING, default='pending')
+#             }
+#         ),
+#         responses={
+#             201: OrderSerializer,
+#             400: openapi.Response(
+#                 description="Cart is empty or product unavailable",
+#                 schema=openapi.Schema(
+#                     type=openapi.TYPE_OBJECT,
+#                     properties={
+#                         'detail': openapi.Schema(type=openapi.TYPE_STRING)
+#                     }
+#                 )
+#             ),
+#             401: openapi.Response(description="Unauthorized")
+#         }
+#     )
+#     @transaction.atomic
+#     def post(self, request):
+#         cart = get_object_or_404(Cart, user=request.user)
+#         cart_items = cart.items.all()
+#         user_info = get_object_or_404(UserProfile, user=request.user)
+#         if not cart_items:
+#             return Response({'detail': 'Cart is empty.'}, status=status.HTTP_400_BAD_REQUEST)
+#         total = 0
+#         for item in cart_items:
+#             product = item.product
+#             if not product.is_available:
+#                 return Response({'detail': f'Product {product.name} is not available.'}, status=status.HTTP_400_BAD_REQUEST)
+#             total += item.price * item.quantity
+#         order = Order.objects.create(
+#             user=request.user,
+#             order_number=get_random_string(12),
+#             status='pending',
+#             total_amount=total,
+#             shipping_address=user_info.address,
+#             payment_status=request.data.get('payment_status', 'pending'),
+#         )
+#         for item in cart_items:
+#             OrderItem.objects.create(
+#                 order=order,
+#                 product=item.product,
+#                 size=item.size,
+#                 color=item.color,
+#                 quantity=item.quantity,
+#                 price_at_purchase=item.price
+#             )
+#         cart.items.all().delete()
+#         serializer = OrderSerializer(order)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+# class OrderDetailAPIView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     @swagger_auto_schema(
+#         operation_description="Get specific order details",
+#         responses={
+#             200: OrderSerializer,
+#             401: openapi.Response(description="Unauthorized"),
+#             404: openapi.Response(description="Order not found")
+#         }
+#     )
+#     def get(self, request, order_id):
+#         order = get_object_or_404(Order, pk=order_id, user=request.user)
+#         serializer = OrderSerializer(order)
+#         return Response(serializer.data)
 
 
     

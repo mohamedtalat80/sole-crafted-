@@ -4,7 +4,7 @@ import django
 from tqdm import tqdm
 
 # ربط إعدادات django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "shoe_ecommerce.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django.setup()
 
 from orders.models import Country, State, City  # غيّر your_app باسم تطبيقك
