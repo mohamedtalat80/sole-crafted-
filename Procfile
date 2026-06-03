@@ -1,3 +1,3 @@
-web: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn core.wsgi
-worker: celery -A core worker -l info
-beat: celery -A core beat -l info
+web: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi
+worker: celery -A config worker -l info
+beat: celery -A config beat -l info
