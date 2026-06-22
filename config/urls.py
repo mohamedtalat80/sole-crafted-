@@ -8,6 +8,7 @@ from apps.terms_and_conditions.urls import public_TermsAndConditions_urlpatterns
 from apps.FAQ.urls import public_FAQ_urlpatterns, admin_FAQ_urlpatterns
 from apps.contact_us.urls import public_contact_us_urlpatterns, admin_contact_us_urlpatterns
 from apps.products.urls import public_products_urlpatterns, admin_products_urlpatterns
+from apps.inventory.urls import public_inventory_urlpatterns, admin_inventory_urlpatterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,10 +30,15 @@ urlpatterns = [
     path('api/products/', include(public_products_urlpatterns)),
 
     # Admin endpoints
-    path('api/admin/', include(admin_user_urlpatterns)),
-    path('api/admin/', include(admin_privacy_policy_urlpatterns)),
-    path('api/admin/', include(admin_TermsAndConditions_urlpatterns)),
-    path('api/admin/', include(admin_FAQ_urlpatterns)),
-    path('api/admin/', include(admin_contact_us_urlpatterns)),
-    path('api/admin/', include(admin_products_urlpatterns)),
+    path('api/admin/', include((admin_user_urlpatterns+
+    admin_privacy_policy_urlpatterns+
+        admin_TermsAndConditions_urlpatterns+
+        admin_FAQ_urlpatterns+
+        admin_contact_us_urlpatterns+
+        admin_products_urlpatterns+
+        admin_inventory_urlpatterns,
+        "admin_endpoints"
+    ))),
+    
+   
 ]

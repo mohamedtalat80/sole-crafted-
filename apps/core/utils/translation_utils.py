@@ -20,9 +20,9 @@ from typing import Dict
 from apps.core.exceptions import ApplicationError
 logger = logging.getLogger(__name__)
 
-_OPENAI_URL = "https://api.openai.com/v1/chat/completions"
-_MODEL = "gpt-4o-mini"
-_TIMEOUT = 30  # seconds
+_OPENAI_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+_MODEL = "meta/llama-3.1-70b-instruct"
+_TIMEOUT = 40  # seconds
 
 # Language codes → human-readable names sent to the model
 TRANSLATION_LANGUAGES: Dict[str, str] = {

@@ -34,6 +34,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
     'apps.products',
     'apps.ratings',
     'apps.favourites',
+    'apps.inventory',
 ]
 
 MIDDLEWARE = [
@@ -68,6 +70,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "apps.core.middleware.AcceptLanguageMiddleware",
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -180,7 +183,21 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     'EXCEPTION_HANDLER': 'apps.core.exceptions.custom_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'apps.core.throttles.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '1000/day',
+        'login': '10/min',
+        'signup': '10/min',
+        'social_login': '10/min',
+        'password_reset': '5/hour',
+        'send_verification_email': '5/hour',
+        'set_new_password': '5/hour',
+    },
 }
+
+THROTTLE_ENABLED = config('THROTTLE_ENABLED', default=True, cast=bool)
 
 # drf-spectacular (Swagger / ReDoc)
 SPECTACULAR_SETTINGS = {
@@ -194,7 +211,7 @@ API_TRANSLATION_KEY = config('API_TRANSLATION_KEY', default='')
 
 # JWT Settings
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Short-lived access token
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Short-lived access token
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Long-lived refresh token
     'ROTATE_REFRESH_TOKENS': True,                  # Get new refresh token on refresh
     'BLACKLIST_AFTER_ROTATION': True,               # Blacklist old refresh tokens
