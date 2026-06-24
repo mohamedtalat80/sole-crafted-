@@ -3,22 +3,14 @@ Tests for the FAQ app.
 
 Coverage:
 Public side
-- GET  /api/FAQ/owner/           list owner FAQs
-- GET  /api/FAQ/customer/        list customer FAQs
+- GET  /api/FAQ/           list owner FAQs
 
-Admin side — Owner FAQs
-- POST   /api/admin/FAQ/owner/
-- GET    /api/admin/FAQ/owner/
-- GET    /api/admin/FAQ/owner/{id}/
-- PATCH  /api/admin/FAQ/owner/{id}/
-- DELETE /api/admin/FAQ/owner/{id}/
-
-Admin side — Customer FAQs
-- POST   /api/admin/FAQ/customer/
-- GET    /api/admin/FAQ/customer/
-- GET    /api/admin/FAQ/customer/{id}/
-- PATCH  /api/admin/FAQ/customer/{id}/
-- DELETE /api/admin/FAQ/customer/{id}/
+Admin side — FAQs
+- POST   /api/admin/FAQ/
+- GET    /api/admin/FAQ/
+- GET    /api/admin/FAQ/{id}/
+- PATCH  /api/admin/FAQ/{id}/
+- DELETE /api/admin/FAQ/{id}/
 """
 from __future__ import annotations
 
@@ -84,11 +76,11 @@ def _assert_error(test_case, response, expected_status):
     return body
 
 
-class AdminOwnerFAQTests(TestCase):
+class AdminFAQTests(TestCase):
     def setUp(self):
         self.admin = _make_user("admin@example.com")
         self.client = _auth_client(self.admin)
-        self.base_url = "/api/admin/FAQ/owner/"
+        self.base_url = "/api/admin/FAQ/"
         patcher = patch(_PATCH_TARGET, side_effect=_get_test_faq_service)
         self.mock_service = patcher.start()
         self.addCleanup(patcher.stop)
@@ -97,7 +89,6 @@ class AdminOwnerFAQTests(TestCase):
         return {
             "question": question,
             "answer": answer,
-            "user_type": "owner",
         }
 
     def test_add_faq_returns_201(self):
@@ -107,24 +98,24 @@ class AdminOwnerFAQTests(TestCase):
         self.assertEqual(body["data"]["answer"], "Answer to the question")
 
     def test_add_faq_missing_question_returns_400(self):
-        payload = {"answer": "Answer to the question", "user_type": "owner"}
+        payload = {"answer": "Answer to the question"}
         response = self.client.post(self.base_url, payload, format="multipart")
         _assert_error(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_add_faq_missing_answer_returns_400(self):
-        payload = {"question": "How to add a boat?", "user_type": "owner"}
+        payload = {"question": "How to add a boat?"}
         response = self.client.post(self.base_url, payload, format="multipart")
         _assert_error(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_list_faqs_returns_200(self):
-        self.client.post(self.base_url, self._faq_payload("Owner FAQ 1", "Answer 1"))
-        self.client.post(self.base_url, self._faq_payload("Owner FAQ 2", "Answer 2"))
+        self.client.post(self.base_url, self._faq_payload("FAQ 1", "Answer 1"))
+        self.client.post(self.base_url, self._faq_payload("FAQ 2", "Answer 2"))
         response = self.client.get(self.base_url)
         body = _assert_success(self, response)
         self.assertEqual(len(body["data"]), 2)
 
     def test_get_single_faq_returns_200(self):
-        post_response = self.client.post(self.base_url, self._faq_payload("Owner FAQ 1", "Answer 1"))
+        post_response = self.client.post(self.base_url, self._faq_payload("FAQ 1", "Answer 1"))
         faq_id = post_response.json()["data"]["id"]
         response = self.client.get(f"{self.base_url}{faq_id}/")
         body = _assert_success(self, response)
@@ -135,7 +126,7 @@ class AdminOwnerFAQTests(TestCase):
         _assert_error(self, response, status.HTTP_404_NOT_FOUND)
 
     def test_update_faq_returns_200(self):
-        post_response = self.client.post(self.base_url, self._faq_payload("Owner FAQ 1", "Answer 1"))
+        post_response = self.client.post(self.base_url, self._faq_payload("FAQ 1", "Answer 1"))
         faq_id = post_response.json()["data"]["id"]
         response = self.client.patch(f"{self.base_url}{faq_id}/", {"question": "Renamed"}, format="multipart")
         body = _assert_success(self, response)
@@ -154,103 +145,19 @@ class AdminOwnerFAQTests(TestCase):
         self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
 
 
-class AdminCustomerFAQTests(TestCase):
-    def setUp(self):
-        self.admin = _make_user("admin@example.com")
-        self.client = _auth_client(self.admin)
-        self.base_url = "/api/admin/FAQ/customer/"
-        patcher = patch(_PATCH_TARGET, side_effect=_get_test_faq_service)
-        self.mock_service = patcher.start()
-        self.addCleanup(patcher.stop)
-
-    def _faq_payload(self, question="How to book a boat?", answer="Answer to the question"):
-        return {
-            "question": question,
-            "answer": answer,
-            "user_type": "customer",
-        }
-
-    def test_add_faq_returns_201(self):
-        response = self.client.post(self.base_url, self._faq_payload())
-        body = _assert_success(self, response, status.HTTP_201_CREATED)
-        self.assertEqual(body["data"]["question"], "How to book a boat?")
-        self.assertEqual(body["data"]["answer"], "Answer to the question")
-
-    def test_add_faq_missing_question_returns_400(self):
-        payload = {"answer": "Answer to the question", "user_type": "customer"}
-        response = self.client.post(self.base_url, payload)
-        _assert_error(self, response, status.HTTP_400_BAD_REQUEST)
-
-    def test_add_faq_missing_answer_returns_400(self):
-        payload = {"question": "How to book a boat?", "user_type": "customer"}
-        response = self.client.post(self.base_url, payload)
-        _assert_error(self, response, status.HTTP_400_BAD_REQUEST)
-
-    def test_list_faqs_returns_200(self):
-        self.client.post(self.base_url, self._faq_payload("Customer FAQ 1", "Answer 1"))
-        self.client.post(self.base_url, self._faq_payload("Customer FAQ 2", "Answer 2"))
-        response = self.client.get(self.base_url)
-        body = _assert_success(self, response)
-        self.assertEqual(len(body["data"]), 2)
-
-    def test_get_single_faq_returns_200(self):
-        post_response = self.client.post(self.base_url, self._faq_payload("Customer FAQ 1", "Answer 1"))
-        faq_id = post_response.json()["data"]["id"]
-        response = self.client.get(f"{self.base_url}{faq_id}/")
-        body = _assert_success(self, response)
-        self.assertEqual(body["data"]["id"], faq_id)
-
-    def test_get_nonexistent_faq_returns_404(self):
-        response = self.client.get(f"{self.base_url}99999/")
-        _assert_error(self, response, status.HTTP_404_NOT_FOUND)
-
-    def test_update_faq_returns_200(self):
-        post_response = self.client.post(self.base_url, self._faq_payload("Customer FAQ 1", "Answer 1"))
-        faq_id = post_response.json()["data"]["id"]
-        response = self.client.patch(f"{self.base_url}{faq_id}/", {"question": "Renamed"})
-        body = _assert_success(self, response)
-        self.assertEqual(body["data"]["question"], "Renamed")
-
-    def test_non_admin_cannot_create_faq(self):
-        customer = _make_user("cust3@example.com", account_type="customer", is_verified=True)
-        client = _auth_client(customer)
-        response = client.post(self.base_url, self._faq_payload())
-        _assert_error(self, response, status.HTTP_403_FORBIDDEN)
-
-    def test_unauthenticated_cannot_list_faqs(self):
-        unauth = APIClient()
-        unauth.defaults["HTTP_DEVICE_TYPE"] = "web"
-        response = unauth.get(self.base_url)
-        self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
-
-    def test_toggle_active_faq_returns_200(self):
-        post_response = self.client.post(self.base_url, self._faq_payload("Customer FAQ 1", "Answer 1"))
-        faq_id = post_response.json()["data"]["id"]
-        response = self.client.patch(f"{self.base_url}{faq_id}/toggle-active/")
-        body = _assert_success(self, response)
-        self.assertEqual(body["data"]["id"], faq_id)
-        self.assertEqual(body["data"]["is_active"], False)
-
 class PublicFAQTests(TestCase):
     def setUp(self):
         self.admin = _make_user("admin_pub@example.com")
         self.admin_client = _auth_client(self.admin)
-        self.owner_url = "/api/FAQ/owner/"
-        self.customer_url = "/api/FAQ/customer/"
+        self.url = "/api/FAQ/"
         patcher = patch(_PATCH_TARGET, side_effect=_get_test_faq_service)
         self.mock_service = patcher.start()
         self.addCleanup(patcher.stop)
 
-    def test_list_owner_faqs_returns_200(self):
-        self.admin_client.post(self.owner_url, {"question": "Q1", "answer": "A1", "user_type": "owner"})
-        self.admin_client.post(self.owner_url, {"question": "Q2", "answer": "A2", "user_type": "owner"})
-        response = self.client.get(self.owner_url)
+    def test_list_faqs_returns_200(self):
+        self.admin_client.post(self.url, {"question": "Q1", "answer": "A1"})
+        self.admin_client.post(self.url, {"question": "Q2", "answer": "A2"})
+        response = self.client.get(self.url)
         body = _assert_success(self, response)
         self.assertEqual(len(body["data"]), 2)
 
-    def test_list_customer_faqs_returns_200(self):
-        self.admin_client.post(self.customer_url, {"question": "Q1", "answer": "A1", "user_type": "customer"})
-        self.admin_client.post(self.customer_url, {"question": "Q2", "answer": "A2", "user_type": "customer"})
-        response = self.client.get(self.customer_url)
-        body = _assert_success(self, response)
-        self.assertEqual(len(body["data"]), 2)

@@ -7,18 +7,15 @@ class IFAQRepository(ABC):
 
     @abstractmethod
     def get_all(self) -> List[object]:
-        """Return all FAQS instances for the given profile."""
+        """Return all FAQS instances."""
     @abstractmethod
-    def get_all_active_by_user_type(self, user_type: str) -> List[object]:
-        """Return all active FAQS instances for the given profile."""
+    def get_all_active(self) -> List[object]:
+        """Return all active FAQS instances."""
     @abstractmethod
     def get_by_id(self, FAQ_id: int) -> Optional[object]:
-        """Return FAQS by PK (with select_related owner__user), or None."""
+        """Return FAQS by PK, or None."""
     @abstractmethod
-    def get_by_user_type(self, user_type: str) -> List[object]:
-        """Return FAQs filtered by user type."""
-    @abstractmethod
-    def create(self, user_type: str, data: dict) -> object:
+    def create(self,data: dict) -> object:
         """Create a new FAQ record."""
 
     @abstractmethod

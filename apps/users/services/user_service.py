@@ -271,7 +271,7 @@ class UserService:
         try:
             send_email(
                 to=email,
-                subject="Your Orangebay verification code",
+                subject="Your Sole Crafted verification code",
                 text=(
                     f"Your verification code is: {code}\n\n"
                     "This code expires in 15 minutes."
@@ -399,7 +399,7 @@ class UserService:
             try:
                 send_email(
                     to=email,
-                    subject="Your Omarina password reset code",
+                    subject="Your Sole Crafted password reset code",
                     text=(
                         f"Your password reset code is: {code}\n\n"
                         "This code expires in 15 minutes.\n"

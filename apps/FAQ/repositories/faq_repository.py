@@ -12,10 +12,8 @@ class FAQRepository(IFAQRepository):
 
     def get_all(self) -> Optional[FAQ]:
         return FAQ.objects.all().order_by("display_order")
-    def get_all_active_by_user_type(self, user_type: str) -> Optional[FAQ]:
-        return FAQ.objects.filter(is_active=True,user_type=user_type).prefetch_related("translations").order_by("display_order")
-    def get_by_user_type(self, user_type: str) -> list[FAQ]:
-        return list(FAQ.objects.filter(user_type=user_type).prefetch_related("translations").order_by("display_order"))
+    def get_all_active(self) -> Optional[FAQ]:
+        return FAQ.objects.filter(is_active=True).prefetch_related("translations").order_by("display_order")
 
     def get_by_id(self, FAQ_id: int) -> Optional[FAQ]:
         try:
@@ -23,10 +21,9 @@ class FAQRepository(IFAQRepository):
         except FAQ.DoesNotExist:
             return None
 
-    def create(self, user_type: str, data: dict) -> FAQ:
+    def create(self, data: dict) -> FAQ:
         try:
             return FAQ.objects.create(
-                user_type=user_type,
                 question=data["question"],
                 answer=data["answer"],
                 display_order=data.get("display_order", 0),

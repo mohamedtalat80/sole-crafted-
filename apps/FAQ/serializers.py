@@ -47,7 +47,6 @@ class FAQReadSerializer(StrictModelSerializer):
             "id",
             "question",
             "answer",
-            "user_type",
             "display_order",
             "is_active",
             "created_at",

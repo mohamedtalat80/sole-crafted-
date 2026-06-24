@@ -12,11 +12,6 @@ class FAQService:
         self._repo = repository
         self._translation = translation
 
-    def get_FAQS_by_user_type(self, user_type: str) -> list:
-        return self._repo.get_by_user_type(user_type)
-        
-    def get_all_active_FAQS_by_user_type(self, user_type: str) -> list:
-        return self._repo.get_all_active_by_user_type(user_type)
 
     def get_FAQ_by_id(self, FAQ_id: int) -> "FAQ":
         faq = self._repo.get_by_id(FAQ_id)
@@ -24,14 +19,14 @@ class FAQService:
             raise NotFoundError(message="FAQ not found")
         return faq
 
-    def add_FAQ(self, user_type: str, data: dict) -> "FAQ":
+    def add_FAQ(self,data: dict) -> "FAQ":
         display_order = data.get("display_order")
-        if display_order is not None and FAQ.objects.filter(user_type=user_type, display_order=display_order).exists():
+        if display_order is not None and FAQ.objects.filter(display_order=display_order).exists():
             raise ConflictError(
                 message="Validation failed",
-                errors={"display_order": [f"Display order {display_order} is already used by another {user_type} FAQ."]},
+                errors={"display_order": [f"Display order {display_order} is already used by another  FAQ."]},
             )
-        faq = self._repo.create(user_type, data)
+        faq = self._repo.create(data)
         self._auto_translate_all(faq)
         return faq
 
@@ -39,10 +34,10 @@ class FAQService:
         display_order = data.get("display_order")
         if display_order is not None:
             faq_instance = self.get_FAQ_by_id(FAQ_id)
-            if FAQ.objects.filter(user_type=faq_instance.user_type, display_order=display_order).exclude(id=FAQ_id).exists():
+            if FAQ.objects.filter(display_order=display_order).exclude(id=FAQ_id).exists():
                 raise ConflictError(
                     message="Validation failed",
-                    errors={"display_order": [f"Display order {display_order} is already used by another {faq_instance.user_type} FAQ."]},
+                    errors={"display_order": [f"Display order {display_order} is already used by another  FAQ."]},
                 )
         faq =self._repo.update(FAQ_id, data)
         if "question" in data or "answer" in data:

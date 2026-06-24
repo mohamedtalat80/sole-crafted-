@@ -5,18 +5,14 @@ Every user type has his FAQ model inherting form the base FAQ
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 class FAQ(models.Model):
-    class UserType(models.TextChoices):
-        CUSTOMER="customer", _("Customer")
-        OWNER="owner",_("Owner")
     question=models.TextField()
     answer=models.TextField()
-    user_type=models.CharField(choices=UserType.choices,default=UserType.CUSTOMER)
     display_order=models.PositiveIntegerField(default=0, db_index=True)
     is_active=models.BooleanField(default=True)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     def __str__(self):
-        return f"{self.question} {self.user_type} "
+        return f"{self.question} "
 class FAQTranslation(models.Model):
     SUPPORTED_LANGUAGES = [
         ("ar", _("Arabic")),
