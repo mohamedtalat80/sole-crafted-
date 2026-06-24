@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from apps.core.utils.upload_utils import upload_to_uuid
 
 
-# Kept for historical migrations that still reference these callables.
+
 def contact_message_image_path(instance, filename):
     return upload_to_uuid(instance, filename, folder_name="contact_messages")
 
