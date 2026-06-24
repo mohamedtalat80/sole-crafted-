@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.users',
     'apps.privacy_policy',
+    'apps.cookies_policy',
     'apps.terms_and_conditions',
     'apps.FAQ',
     'apps.contact_us',
