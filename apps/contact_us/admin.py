@@ -1,24 +1,5 @@
 from django.contrib import admin
-
-from .models import ContactContent, ContactIcon, ContactInfo, ContactMessage, SocialMediaLink
-
-class ContactIconInline(admin.StackedInline):
-    model = ContactIcon
-    extra = 1
-
-class SocialMediaLinkInline(admin.StackedInline):
-    model = SocialMediaLink
-    extra = 1
-
-class ContactInfoInline(admin.StackedInline):
-    model = ContactInfo
-    extra = 1
-    inlines = [ContactIconInline]
-
-@admin.register(ContactContent)
-class ContactContentAdmin(admin.ModelAdmin):
-    list_display = ('title', 'description')
-    inlines = [ContactInfoInline, SocialMediaLinkInline]
+from .models import ContactMessage
 
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
