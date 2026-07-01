@@ -1,61 +1,30 @@
-from __future__ import annotations
-
-from django.conf import settings
 from django.db import models
-
-from apps.products.models import Product, Size, Colour
-
-
+from apps.products.models import Product,Size,Colour
+from django.conf import settings
 class StockEntry(models.Model):
-    """Tracks the quantity of a specific product/size/colour combination."""
-
-    class MovementType(models.TextChoices):
-        IN = "in", "Stock In"
-        OUT = "out", "Stock Out"
-        ADJUSTMENT = "adjustment", "Adjustment"
-
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="stock_entries")
-    size = models.ForeignKey(Size, on_delete=models.CASCADE, related_name="stock_entries")
-    colour = models.ForeignKey(Colour, on_delete=models.CASCADE, related_name="stock_entries")
+    MOVEMENT_CHOICES = [
+        ('in', 'IN'),
+        ('out', 'OUT'),
+        ('adjustment', 'ADJUSTMENT'),
+    ]
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE,related_name="stock_entries")
+    size_id = models.ForeignKey(Size, on_delete=models.CASCADE,related_name="stock_entries")
+    colour_id = models.ForeignKey(Colour, on_delete=models.CASCADE,related_name="stock_entries")
+    movement_type = models.CharField(max_length=10, choices=MOVEMENT_CHOICES)
     quantity = models.IntegerField()
-    movement_type = models.CharField(max_length=20, choices=MovementType.choices)
-    note = models.TextField(blank=True, default="")
-    recorded_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="stock_entries",
-    )
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name="stock_entries")
+    note = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-        verbose_name = "Stock Entry"
-        verbose_name_plural = "Stock Entries"
-
-    def __str__(self) -> str:
-        return f"{self.get_movement_type_display()} | {self.product.name} | {self.size.name} / {self.colour.name} | qty={self.quantity}"
-
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.product_id} {self.size_id} {self.colour_id} {self.movement_type} {self.quantity}"
 
 class InventorySnapshot(models.Model):
-    """
-    Current on-hand quantity per product/size/colour.
-    Updated in-place by the service every time a StockEntry is recorded.
-    Never written directly — always managed through the service.
-    """
-
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="inventory")
-    size = models.ForeignKey(Size, on_delete=models.CASCADE, related_name="inventory")
-    colour = models.ForeignKey(Colour, on_delete=models.CASCADE, related_name="inventory")
-    quantity_on_hand = models.IntegerField(default=0)
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE,related_name="inventory_snapshots")
+    size_id = models.ForeignKey(Size, on_delete=models.CASCADE,related_name="inventory_snapshots")
+    colour_id = models.ForeignKey(Colour, on_delete=models.CASCADE,related_name="inventory_snapshots")
+    quantity_on_hand = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ("product", "size", "colour")
-        ordering = ["product", "size", "colour"]
-        verbose_name = "Inventory Snapshot"
-        verbose_name_plural = "Inventory Snapshots"
-
-    def __str__(self) -> str:
-        return f"{self.product.name} | {self.size.name} / {self.colour.name} | on-hand={self.quantity_on_hand}"
+    def __str__(self):
+        return f"{self.product_id} {self.size_id} {self.colour_id} {self.quantity}"

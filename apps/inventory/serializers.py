@@ -1,21 +1,6 @@
-from __future__ import annotations
-
 from rest_framework import serializers
-
-from apps.core.serializers import StrictModelSerializer, StrictSerializer
+from apps.core.serializers import StrictModelSerializer,StrictSerializer
 from apps.inventory.models import InventorySnapshot, StockEntry
-
-
-class StockAdjustmentWriteSerializer(StrictSerializer):
-    """Input for stock-in, stock-out, and adjustment endpoints."""
-
-    product_id = serializers.IntegerField(min_value=1)
-    size_id = serializers.IntegerField(min_value=1)
-    colour_id = serializers.IntegerField(min_value=1)
-    quantity = serializers.IntegerField()
-    note = serializers.CharField(required=False, allow_blank=True, default="")
-
-
 class InventorySnapshotSerializer(StrictModelSerializer):
     """Current on-hand stock per product/size/colour."""
 
@@ -39,3 +24,26 @@ class StockEntrySerializer(StrictModelSerializer):
     class Meta:
         model = StockEntry
         fields = ["id", "product", "size", "colour", "movement_type", "quantity", "note", "recorded_by", "created_at"]
+
+class StockAdjustmentSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField(required=True)
+    size_id = serializers.IntegerField(required=True)
+    colour_id = serializers.IntegerField(required=True)
+    quantity = serializers.IntegerField(required=True)
+    recorded_by = serializers.IntegerField(required=True)
+    note = serializers.CharField(required=False, allow_blank=True)
+class StockReserveSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField(required=True)
+    size_id = serializers.IntegerField(required=True)
+    colour_id = serializers.IntegerField(required=True)
+    quantity = serializers.IntegerField(required=True)
+    recorded_by = serializers.IntegerField(required=True)
+    note = serializers.CharField(required=False, allow_blank=True)
+class StockReleaseSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField(required=True)
+    size_id = serializers.IntegerField(required=True)
+    colour_id = serializers.IntegerField(required=True)
+    quantity = serializers.IntegerField(required=True)
+    recorded_by = serializers.IntegerField(required=True)
+    note = serializers.CharField(required=False, allow_blank=True)
+

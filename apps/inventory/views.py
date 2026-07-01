@@ -1,25 +1,14 @@
-from __future__ import annotations
-
-from drf_spectacular.utils import OpenApiExample, extend_schema
-from rest_framework import status
 from rest_framework.views import APIView
-
-from apps.core.exceptions import ApplicationError
 from apps.core.pagination import PaginationMixin
 from apps.core.permissions import IsAdminAccount
-from apps.core.responses import error_response, success_response
-from apps.inventory.repositories.inventory_repository import InventoryRepository
-from apps.inventory.serializers import (
-    InventorySnapshotSerializer,
-    StockAdjustmentWriteSerializer,
-    StockEntrySerializer,
-)
 from apps.inventory.services.inventory_service import InventoryService
+from apps.inventory.repositories.inventory_repository import InventoryRepository
+from apps.inventory.serializers import InventorySnapshotSerializer, StockEntrySerializer,StockAdjustmentSerializer
+from drf_spectacular.utils import extend_schema, OpenApiTypes, OpenApiExample
+#get inventory service
 
-
-def _get_inventory_service() -> InventoryService:
-    return InventoryService(repository=InventoryRepository())
-
+def get_inventory_service():
+    return InventoryService(InventoryRepository())
 
 # ---------------------------------------------------------------------------
 # Admin: list all current stock levels
@@ -77,11 +66,19 @@ class AdminProductStockView(PaginationMixin, APIView):
     )
     def get(self, request, product_id: int):
         try:
-            service = _get_inventory_service()
+            # use get_inventory_service() as defined above
+            service = get_inventory_service()
             snapshots = service.get_product_stock(product_id)
+            total_stock = service.get_stock_for_product(product_id)
         except ApplicationError as exc:
             return error_response(message=exc.message, errors=exc.errors, status_code=exc.status_code)
-        return self.paginate_and_respond(snapshots, InventorySnapshotSerializer, request, "Product stock retrieved successfully")
+        
+        response = self.paginate_and_respond(snapshots, InventorySnapshotSerializer, request, "Product stock retrieved successfully")
+    
+        if hasattr(response, 'data') and isinstance(response.data, dict) and 'data' in response.data:
+            response.data['data']['total_stock'] = total_stock
+            
+        return response
 
 
 # ---------------------------------------------------------------------------
@@ -117,7 +114,7 @@ class AdminStockInView(APIView):
     @extend_schema(
         operation_id="admin_stock_in",
         summary="Record a stock-in (receiving new units)",
-        request=StockAdjustmentWriteSerializer,
+        request=StockAdjustmentSerializer,
         responses={200: InventorySnapshotSerializer, 400: {"description": "Invalid data"}, 404: {"description": "Product / Size / Colour not found"}},
         examples=[
             OpenApiExample(
@@ -128,7 +125,7 @@ class AdminStockInView(APIView):
         ],
     )
     def post(self, request):
-        serializer = StockAdjustmentWriteSerializer(data=request.data)
+        serializer = StockAdjustmentSerializer(data=request.data)
         if not serializer.is_valid():
             return error_response(message="Invalid data", errors=serializer.errors, status_code=status.HTTP_400_BAD_REQUEST)
         d = serializer.validated_data
@@ -161,7 +158,7 @@ class AdminStockOutView(APIView):
     @extend_schema(
         operation_id="admin_stock_out",
         summary="Record a stock-out (dispatching units)",
-        request=StockAdjustmentWriteSerializer,
+        request=StockAdjustmentSerializer,
         responses={200: InventorySnapshotSerializer, 400: {"description": "Invalid data or insufficient stock"}, 404: {"description": "Product / Size / Colour not found"}},
         examples=[
             OpenApiExample(
@@ -172,7 +169,7 @@ class AdminStockOutView(APIView):
         ],
     )
     def post(self, request):
-        serializer = StockAdjustmentWriteSerializer(data=request.data)
+        serializer = StockAdjustmentSerializer(data=request.data)
         if not serializer.is_valid():
             return error_response(message="Invalid data", errors=serializer.errors, status_code=status.HTTP_400_BAD_REQUEST)
         d = serializer.validated_data
@@ -205,7 +202,7 @@ class AdminStockAdjustmentView(APIView):
     @extend_schema(
         operation_id="admin_stock_adjustment",
         summary="Set an absolute stock quantity (inventory count correction)",
-        request=StockAdjustmentWriteSerializer,
+        request=StockAdjustmentSerializer,
         responses={200: InventorySnapshotSerializer, 400: {"description": "Invalid data"}, 404: {"description": "Product / Size / Colour not found"}},
         examples=[
             OpenApiExample(
@@ -216,7 +213,7 @@ class AdminStockAdjustmentView(APIView):
         ],
     )
     def post(self, request):
-        serializer = StockAdjustmentWriteSerializer(data=request.data)
+        serializer = StockAdjustmentSerializer(data=request.data)
         if not serializer.is_valid():
             return error_response(message="Invalid data", errors=serializer.errors, status_code=status.HTTP_400_BAD_REQUEST)
         d = serializer.validated_data

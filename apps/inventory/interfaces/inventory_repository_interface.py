@@ -1,47 +1,46 @@
 from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from typing import List, Optional
-
+from typing import Optional, List
+from apps.inventory.models import InventorySnapshot
 
 class IInventoryRepository(ABC):
-
     @abstractmethod
-    def get_stock(self, product_id: int, size_id: int, colour_id: int) -> Optional[object]:
-        """Return the InventorySnapshot for (product, size, colour), or None."""
-
+    def get_stock(self,product_id:int,size_id:int,colour_id:int)->Optional[int]:
+        """Return the stock of a product."""
     @abstractmethod
-    def get_stock_for_product(self, product_id: int) -> List[object]:
-        """Return all InventorySnapshot rows for a product."""
-
+    def get_stock_for_product(self,product_id:int)->Optional[int]:
+        """Return the total stock of a product."""
     @abstractmethod
-    def get_all_snapshots(self) -> List[object]:
-        """Return all InventorySnapshot rows (admin use)."""
-
+    def get_product_stock(self,product_id:int)->List[InventorySnapshot]:
+        """Return the stock snapshots for a product."""
     @abstractmethod
-    def adjust_stock(
-        self,
-        product_id: int,
-        size_id: int,
-        colour_id: int,
-        quantity: int,
-        movement_type: str,
-        note: str,
-        recorded_by,
-    ) -> object:
+    def get_all_snapshots(self)->List[InventorySnapshot]:
+        """Return all snapshots."""
+    @abstractmethod
+    def get_entries_for_product(self,product_id:int)->List[InventoryEntry]:
+        """Return all enteries for a product."""    
+    
+    @abstractmethod
+    def check_availability(self, product_id, size_id, colour_id, quantity) -> bool:
+        """Read-only check: returns True if enough stock exists."""
+    @abstractmethod
+    def adjust_stock(self, product_id, size_id, colour_id,movement_type, quantity, recorded_by, note):
+        """Adjust stock of a product."""
+    @abstractmethod
+    def assert_SKU_belongs_to_product(self, product_id, size_id, colour_id):
+        """Assert that a SKU belongs to a product."""
+    @abstractmethod
+    def reserve_stock(self, product_id, size_id, colour_id, quantity, order_ref, recorded_by):
         """
-        Record a StockEntry and update (or create) the matching InventorySnapshot.
-        Returns the updated InventorySnapshot.
+        Atomically checks AND deducts stock for a confirmed order.
+        Raises ApplicationError if insufficient.
+        Records a StockEntry(OUT, note=f"Order #{order_ref}").
         """
 
     @abstractmethod
-    def get_entries_for_product(self, product_id: int) -> List[object]:
-        """Return all StockEntry rows for a product, newest first."""
-
-    @abstractmethod
-    def assert_sku_belongs_to_product(self, product_id: int, size_id: int, colour_id: int) -> None:
+    def release_stock(self, product_id, size_id, colour_id, quantity, order_ref, recorded_by):
         """
-        Raise ApplicationError if size_id or colour_id is not declared on the product's
-        M2M sets (product.sizes / product.colors). This enforces that you can only stock
-        combinations the product catalogue explicitly declares.
+        Returns stock when an order is cancelled.
+        Records a StockEntry(IN, note=f"Cancelled Order #{order_ref}").
         """
+        

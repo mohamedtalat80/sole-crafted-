@@ -26,10 +26,10 @@ urlpatterns = [
     path('api/privacy-policy/', include(public_privacy_policy_urlpatterns)),
     path('api/cookies-policy/', include(public_cookies_policy_urlpatterns)),
     path('api/terms-and-conditions/', include(public_TermsAndConditions_urlpatterns)),
-    path('api/faq/owner/', include((public_FAQ_urlpatterns[:1], 'faq_owner'))),
-    path('api/faq/customer/', include((public_FAQ_urlpatterns[1:], 'faq_customer'))),
+    path('api/faq/', include(public_FAQ_urlpatterns)),
     path('api/contact-us/', include(public_contact_us_urlpatterns)),
     path('api/products/', include(public_products_urlpatterns)),
+    path('api/inventory/', include(public_inventory_urlpatterns)),
 
     # Admin endpoints
     path('api/admin/', include((admin_user_urlpatterns+
