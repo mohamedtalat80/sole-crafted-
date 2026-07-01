@@ -1,0 +1,257 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+  <title>Sole Crafted API — Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --accent:   #1a8fe3;
+      --green:    #238636;
+      --purple:   #6e40c9;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --radius:   12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 24px 64px;
+    }
+
+    /* ── Top nav ── */
+    nav {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 52px;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .nav-logo-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-logo-icon img { width: 100%; height: 100%; object-fit: contain; }
+    .nav-logo-text { font-size: 18px; font-weight: 700; }
+    .nav-logo-text span { color: var(--accent); }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-user {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .nav-user strong { color: var(--text); }
+
+    .btn-logout {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color .2s, color .2s;
+    }
+    .btn-logout:hover { border-color: #f85149; color: #f85149; }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0d2a12;
+      border: 1px solid #238636;
+      color: #3fb950;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      background: #3fb950;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.35; }
+    }
+
+    header h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    header p  { font-size: 15px; color: var(--muted); }
+
+    /* ── Cards ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color .2s, transform .15s, box-shadow .2s;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 36px rgba(26,143,227,.13);
+    }
+    .card.green:hover  { border-color: #3fb950; box-shadow: 0 10px 36px rgba(35,134,54,.15); }
+    .card.purple:hover { border-color: #a371f7; box-shadow: 0 10px 36px rgba(110,64,201,.15); }
+    .card.orange:hover { border-color: #f77f00; box-shadow: 0 10px 36px rgba(247,127,0,.15); }
+
+    .card-header { display: flex; align-items: center; gap: 14px; }
+
+    .card-icon {
+      width: 46px; height: 46px;
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .card-icon.blue   { background: rgba(26,143,227,.15); }
+    .card-icon.green  { background: rgba(35,134,54,.15);  }
+    .card-icon.purple { background: rgba(110,64,201,.15); }
+
+    .card-title { font-size: 16px; font-weight: 600; }
+    .card-sub   { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .card-desc  { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+    .card-arrow {
+      margin-top: auto;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+    .card.green  .card-arrow { color: #3fb950; }
+    .card.purple .card-arrow { color: #a371f7; }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 56px;
+      color: #484f58;
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a class="nav-logo" href="/">
+      <div class="nav-logo-icon"><img src="{% static 'img/logo.png' %}" alt="Sole Crafted" /></div>
+      <div class="nav-logo-text">Sole<span>Crafted</span></div>
+    </a>
+    <div class="nav-right">
+      <span class="nav-user">Signed in as <strong>{{ username }}</strong></span>
+      <a class="btn-logout" href="/logout/">Sign out</a>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <header>
+    <div class="status">
+      <span class="status-dot"></span>
+      API is running &mdash; Django {{ django_version }}
+    </div>
+    <h1>Developer Portal</h1>
+    <p>Access the API documentation, schema, and admin panel.</p>
+  </header>
+
+  <!-- Cards -->
+  <div class="grid">
+    <a class="card" href="/api/docs/">
+      <div class="card-header">
+        <div class="card-icon blue">📖</div>
+        <div>
+          <div class="card-title">Swagger UI</div>
+          <div class="card-sub">Interactive API Explorer</div>
+        </div>
+      </div>
+      <p class="card-desc">Browse, test, and execute all API endpoints directly from your browser with live request/response.</p>
+      <div class="card-arrow">Open Swagger &rarr;</div>
+    </a>
+
+    <a class="card green" href="/api/redoc/">
+      <div class="card-header">
+        <div class="card-icon green">📄</div>
+        <div>
+          <div class="card-title">ReDoc</div>
+          <div class="card-sub">API Reference Docs</div>
+        </div>
+      </div>
+      <p class="card-desc">Clean, readable API reference with full schema definitions, examples, and parameter descriptions.</p>
+      <div class="card-arrow">Open ReDoc &rarr;</div>
+    </a>
+
+    <a class="card purple" href="/admin/">
+      <div class="card-header">
+        <div class="card-icon purple">🛡️</div>
+        <div>
+          <div class="card-title">Admin Panel</div>
+          <div class="card-sub">Django Admin</div>
+        </div>
+      </div>
+      <p class="card-desc">Manage users, content, FAQ, terms, inventory,orders, and all platform data via the admin interface.</p>
+      <div class="card-arrow">Open Admin &rarr;</div>
+    </a>
+  </div>
+  <footer>Sole Crafted Backend &mdash; Django {{ django_version }} &middot; DRF &middot; PostgreSQL</footer>
+
+</body>
+</html>

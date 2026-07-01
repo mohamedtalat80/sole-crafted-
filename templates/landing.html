@@ -1,0 +1,176 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+  <title>Sole Crafted API — Sign In</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --accent:   #1a8fe3;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --danger:   #f85149;
+      --radius:   14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* ── Logo ── */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .logo-icon {
+      width: 48px; height: 48px;
+      border-radius: 13px;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon img { width: 100%; height: 100%; object-fit: contain; }
+    .logo-text { font-size: 28px; font-weight: 700; letter-spacing: -.5px; }
+    .logo-text span { color: var(--accent); }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .card-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    /* ── Form ── */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color .2s;
+      margin-bottom: 18px;
+    }
+    input:focus { border-color: var(--accent); }
+    input::placeholder { color: #484f58; }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 11px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      margin-top: 4px;
+    }
+    button[type="submit"]:hover  { background: #1579c5; }
+    button[type="submit"]:active { transform: scale(.98); }
+
+    /* ── Error alert ── */
+    .alert {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(248, 81, 73, .1);
+      border: 1px solid rgba(248, 81, 73, .4);
+      color: var(--danger);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 28px;
+      color: #484f58;
+      font-size: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">
+    <div class="logo-icon"><img src="{% static 'img/logo.png' %}" alt="Sole Crafted" /></div>
+    <div class="logo-text">Sole<span>Crafted</span></div>
+  </div>
+  <p class="tagline">Backend Developer Portal — Staff access only</p>
+
+  <div class="card">
+    <div class="card-title">Sign in</div>
+    <div class="card-sub">Enter your admin credentials to continue.</div>
+
+    {% if error %}
+    <div class="alert">
+      <span>⚠</span>
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/">
+      {% csrf_token %}
+      <label for="username">Email or username</label>
+      <input id="username" name="username" type="text" placeholder="admin@solecrafted.com" autocomplete="username" autofocus />
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+      <button type="submit">Sign in &rarr;</button>
+    </form>
+  </div>
+
+  <footer>Sole Crafted &mdash; Django {{ django_version }} &middot; DRF &middot; PostgreSQL</footer>
+
+</body>
+</html>

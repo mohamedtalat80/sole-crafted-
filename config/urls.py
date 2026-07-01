@@ -1,4 +1,9 @@
+import django
 from django.contrib import admin
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import render, redirect
+from django.views.decorators.http import require_http_methods
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
@@ -11,7 +16,44 @@ from apps.products.urls import public_products_urlpatterns, admin_products_urlpa
 from apps.inventory.urls import public_inventory_urlpatterns, admin_inventory_urlpatterns
 from apps.cookies_policy.urls import public_cookies_policy_urlpatterns, admin_cookies_policy_urlpatterns
 
+_CTX = {"django_version": django.get_version()}
+
+
+@require_http_methods(["GET", "POST"])
+def portal(request):
+    """Root: redirect to dashboard if already authenticated, else show login."""
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect("dashboard")
+
+    error = None
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
+        user = authenticate(request, username=username, password=password)
+        if user and user.is_staff:
+            login(request, user)
+            return redirect("dashboard")
+        error = "Invalid credentials or insufficient permissions."
+
+    return render(request, "landing.html", {**_CTX, "error": error})
+
+
+@staff_member_required(login_url="/")
+def dashboard(request):
+    return render(request, "dashboard.html", {
+        **_CTX,
+        "username": request.user.get_username(),
+    })
+
+def portal_logout(request):
+    logout(request)
+    return redirect("/")
+    
+
 urlpatterns = [
+    path("", portal, name="portal"),
+    path("dashboard/", dashboard, name="dashboard"),
+    path("logout/", portal_logout, name="portal-logout"),
     path('admin/', admin.site.urls),
 
     # API schema
