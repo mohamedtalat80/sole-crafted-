@@ -31,4 +31,3 @@ django-celery-beat==2.6.0
 
 tzfpy>=1.1.0
 
-django-storage-supabase==0.1.0
