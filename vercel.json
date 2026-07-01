@@ -1,16 +1,15 @@
 {
     "version": 2,
-    "functions": {
-        "config/wsgi.py": {
-            "runtime": "python3.12",
-            "maxDuration": 30
-        }
-    },
-    "rewrites": [
+    "builds": [
         {
-            "source": "/(.*)",
-            "destination": "config/wsgi.py"
+            "src": "config/wsgi.py",
+            "use": "@vercel/python"
         }
     ],
-    "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "config/wsgi.py"
+        }
+    ]
 }
