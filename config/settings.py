@@ -201,13 +201,13 @@ REST_FRAMEWORK = {
     },
 }
 JAZZMIN_SETTINGS = {
-    "site_title": "Shoe Ecommerce Admin",
-    "site_header": "Shoe Ecommerce",
-    "site_brand": "Shoe Ecommerce",
+    "site_title": "Sole crafted Admin",
+    "site_header": "Sole crafted",
+    "site_brand": "Sole crafted",
     "site_logo": "",
     "site_logo_classes": "img-circle",
-    "welcome_sign": "Welcome to the Shoe Ecommerce Admin",
-    "copyright": "Shoe Ecommerce",
+    "welcome_sign": "Welcome to the Sole crafted Admin",
+    "copyright": "Sole crafted",
     "user_avatar": None,
     "topmenu_links": [
         {
@@ -222,6 +222,7 @@ JAZZMIN_SETTINGS = {
             "url": "admin:logout",
             "permissions": ["auth.change_user"],
         },
+    
     ],
     "usermenu_profile_perms": ["auth.change_user"],
     "show_sidebar": True,
