@@ -200,6 +200,39 @@ REST_FRAMEWORK = {
         'set_new_password': '5/hour',
     },
 }
+JAZZMIN_SETTINGS = {
+    "site_title": "Shoe Ecommerce Admin",
+    "site_header": "Shoe Ecommerce",
+    "site_brand": "Shoe Ecommerce",
+    "site_logo": "",
+    "site_logo_classes": "img-circle",
+    "welcome_sign": "Welcome to the Shoe Ecommerce Admin",
+    "copyright": "Shoe Ecommerce",
+    "user_avatar": None,
+    "topmenu_links": [
+        {
+            "name": "Home",
+            "url": "admin:index",
+            "permissions": ["auth.change_user"],
+        },
+    ],
+    "usermenu_links": [
+        {
+            "name": "Logout",
+            "url": "admin:logout",
+            "permissions": ["auth.change_user"],
+        },
+    ],
+    "usermenu_profile_perms": ["auth.change_user"],
+    "show_sidebar": True,
+    "navigation": [
+        {
+            "name": "Dashboard",
+            "icon": "fas fa-tachometer-alt",
+            "url": "admin:index",
+        },
+    ],
+}
 
 THROTTLE_ENABLED = config('THROTTLE_ENABLED', default=True, cast=bool)
 
